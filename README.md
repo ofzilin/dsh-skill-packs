@@ -137,6 +137,8 @@ npm run build     # tsdown → lib/index.js，tsc → lib/types/
 
 约定：**运行时不 import 任何 `@deepseek-ai/*`**（已安装插件解析不到宿主包，见 ADR 0005），`@deepseek-ai/*` 只进 `devDependencies`；运行时依赖只有 `yaml` 与 `chokidar`。名字文法在 `src/names.ts` 本地留一份，`tests/names.spec.ts` 对着 core 的 `isSkillName` 逐条比对。
 
+`lib/` 是**提交物**：远端安装（`dsh plugin add github:...`）不会替我们跑构建，所以改完 `src/` 要先 `npm run build` 再提交。
+
 ## 文档
 
 - [GLOSSARY.md](./GLOSSARY.md)

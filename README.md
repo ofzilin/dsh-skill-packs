@@ -53,7 +53,7 @@ DSH 的 skill 发现只扫一层（`<root>/<name>/SKILL.md`），所有仓库的
 ## 布局
 
 ```
-~/.dsh/skill-packs/
+~/.dsh/dsh-skill-packs/
   settings.json                    # 启用表
   mattpocock-skills/               # git clone，原样放，不改造
     .claude-plugin/plugin.json
@@ -66,13 +66,13 @@ DSH 的 skill 发现只扫一层（`<root>/<name>/SKILL.md`），所有仓库的
   scratch-notes/                   # 没标记，discovery mode
     anything/deep/SKILL.md
 
-<project>/.dsh/skill-packs/
+<project>/.dsh/dsh-skill-packs/
   settings.json                    # 只放启用表，可提交
 ```
 
 项目级不存文件，只声明意图（ADR 0001）。协作者各自在用户级 clone 一次。
 
-本仓库 `dsh-skill-packs` 是插件源码；`~/.dsh/skill-packs/` 是运行时存放 pack 的目录 —— 同名不同物。
+本仓库叫 `dsh-skill-packs`（插件源码），运行时目录是 `~/.dsh/dsh-skill-packs/`（存放 pack）—— 同一个名字，靠路径区分。
 
 ## 启用表
 
@@ -104,7 +104,7 @@ DSH 的 skill 发现只扫一层（`<root>/<name>/SKILL.md`），所有仓库的
 
 ## 生效与优先级
 
-- **生效**：监听 `~/.dsh/skill-packs/`，目录变化触发 registry 缓存失效，下一次 pre-step 即生效，不需要重启会话。
+- **生效**：监听 `~/.dsh/dsh-skill-packs/`，目录变化触发 registry 缓存失效，下一次 pre-step 即生效，不需要重启会话。
 - **优先级**：provider rank 定为 **450**。撞名时 rank 小者胜，因此 `~/.dsh/skills`（400）里的扁平 skill 赢过 pack，而 `~/.agents/skills`（500）与 bundled（600）让位给 pack。
 - **`.git` 保留**：pack 目录里带着上游仓库的 `.git`，更新就是在原地 `git pull`；扫描忽略它。
 - **递归不设深度上限**：v1 不设，跑出问题再加。

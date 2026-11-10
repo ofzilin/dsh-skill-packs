@@ -11,10 +11,10 @@ import * as SkillPacks from '../src/index'
  * Acceptance against a real Claude plugin repository. Runs only when the pack
  * has been cloned into the user-level pack root:
  *
- *   git clone https://github.com/mattpocock/skills ~/.dsh/skill-packs/mattpocock-skills
- *   echo '{ "mattpocock-skills": true }' > ~/.dsh/skill-packs/settings.json
+ *   git clone https://github.com/mattpocock/skills ~/.dsh/dsh-skill-packs/mattpocock-skills
+ *   echo '{ "mattpocock-skills": true }' > ~/.dsh/dsh-skill-packs/settings.json
  */
-const packRoot = process.env.DSH_SKILL_PACK_ROOT ?? join(homedir(), '.dsh', 'skill-packs')
+const packRoot = process.env.DSH_SKILL_PACK_ROOT ?? join(homedir(), '.dsh', 'dsh-skill-packs')
 const enabled = existsSync(join(packRoot, 'mattpocock-skills', '.claude-plugin', 'plugin.json'))
 
 describe.skipIf(!enabled)('mattpocock/skills as a compat pack', () => {

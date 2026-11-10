@@ -6,7 +6,7 @@ pack 的形态由标记文件决定，不看启用表：有 `.skill-pack/skills.
 
 ## Considered Options
 
-- **manifest 必填**：判定无歧义，但"clone 进 `skill-packs/` 就能用"就没了；而启用表已经挡掉冒名目录，manifest 的职责是"控制暴露哪些"，不是"证明这是 pack"。
+- **manifest 必填**：判定无歧义，但"clone 进 `dsh-skill-packs/` 就能用"就没了；而启用表已经挡掉冒名目录，manifest 的职责是"控制暴露哪些"，不是"证明这是 pack"。
 - **只做 compat**：被排除，用户要的是自己的策略加上 Claude 兼容，不是只挂 Claude。
 - **只做 discovery**：递归会捞到 `examples/`、`fixtures/`、`node_modules` 里的 `SKILL.md`，没有出口。
 - **`skills[]` 追加而非白名单**：会让"严格模式"名不副实——列了却还扫别的，冲突时无法判断意图。

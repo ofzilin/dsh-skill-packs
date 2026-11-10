@@ -88,7 +88,7 @@ export async function findProjectRoot(cwd: string): Promise<string | undefined> 
 export async function projectSettingsPath(cwd: string | undefined): Promise<string | undefined> {
   if (cwd === undefined) return undefined
   const root = await findProjectRoot(cwd)
-  return root === undefined ? undefined : join(root, '.dsh', 'skill-packs', SETTINGS_FILE)
+  return root === undefined ? undefined : join(root, '.dsh', 'dsh-skill-packs', SETTINGS_FILE)
 }
 
 async function pathExists(path: string): Promise<boolean> {

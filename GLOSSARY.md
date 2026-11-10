@@ -5,11 +5,11 @@
 ## Language
 
 **skill pack (pack)**:
-`~/.dsh/skill-packs/` 下的一个目录，其形态由目录里的标记文件决定（见三个 mode）。
+`~/.dsh/dsh-skill-packs/` 下的一个目录，其形态由目录里的标记文件决定（见三个 mode）。
 _Avoid_: plugin（DSH 里指 Cordis 插件）, bundle, 技能包
 
 **pack root**:
-存放 pack 的目录。v1 只有用户级 `~/.dsh/skill-packs/`。
+存放 pack 的目录。v1 只有用户级 `~/.dsh/dsh-skill-packs/`。
 _Avoid_: skills 目录, 插件目录
 
 **pack mode**:

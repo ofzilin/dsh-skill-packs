@@ -2,7 +2,7 @@
 
 **Status**: accepted
 
-Claude Code 有三层（marketplace 索引 / 版本目录 `cache/<marketplace>/<plugin>/<version>/` / installed registry + scope），我们全部不复刻：git 内容只放在 `~/.dsh/skill-packs/<dir>/`，项目级只放 `<project>/.dsh/skill-packs/settings.json` 声明"这个项目启用哪些 pack"，不存任何文件。这样磁盘就是唯一事实，不会出现 registry 与磁盘不一致；代价是没有版本 pin/回滚、更新直接作用于正在运行的会话、禁用只能关开关或移走目录。
+Claude Code 有三层（marketplace 索引 / 版本目录 `cache/<marketplace>/<plugin>/<version>/` / installed registry + scope），我们全部不复刻：git 内容只放在 `~/.dsh/dsh-skill-packs/<dir>/`，项目级只放 `<project>/.dsh/dsh-skill-packs/settings.json` 声明"这个项目启用哪些 pack"，不存任何文件。这样磁盘就是唯一事实，不会出现 registry 与磁盘不一致；代价是没有版本 pin/回滚、更新直接作用于正在运行的会话、禁用只能关开关或移走目录。
 
 ## Considered Options
 
@@ -14,5 +14,5 @@ Claude Code 有三层（marketplace 索引 / 版本目录 `cache/<marketplace>/<
 
 - 项目协作靠提交 `settings.json`；协作者仍需各自在用户级 clone 一次。
 - `settings.json` 的键是**目录名**，不是 namespace——重命名目录会让旧键悬空（warn，不阻塞）。
-- 用户级 `skill-packs/` 与 pack 同级放着 `settings.json`，扫描时必须跳过所有非目录条目。
-- 项目级 `skill-packs/` 只读 `settings.json`；里面若出现子目录（有人以为能放 pack），忽略并 warn。
+- 用户级 `dsh-skill-packs/` 与 pack 同级放着 `settings.json`，扫描时必须跳过所有非目录条目。
+- 项目级 `dsh-skill-packs/` 只读 `settings.json`；里面若出现子目录（有人以为能放 pack），忽略并 warn。

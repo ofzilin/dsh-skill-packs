@@ -1,0 +1,5 @@
+# Bundle patch layer for this profile-level plugin: the row loads the package's
+# main entry as the host half. The provider itself is registered in `apply()`.
+- insert:
+    - id: skill-packs
+      name: dsh-skill-packs

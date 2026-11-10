@@ -121,7 +121,7 @@ DSH 的 skill 发现只扫一层（`<root>/<name>/SKILL.md`），所有仓库的
 本地开发期直接把本仓库挂进 profile（需要绝对路径，且先 `npm run build` 产出 `lib/`）：
 
 ```sh
-dsh plugin --profile web add C:\WorkSpace\ofzilin.github\01-plugin-dev\dsh-skills-plugin
+dsh plugin --profile web add /path/to/dsh-skill-packs     # Windows: C:\path\to\dsh-skill-packs
 ```
 
 从 GitHub 安装（v0.1.0 起）：

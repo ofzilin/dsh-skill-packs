@@ -124,10 +124,10 @@ DSH 的 skill 发现只扫一层（`<root>/<name>/SKILL.md`），所有仓库的
 dsh plugin --profile web add C:\WorkSpace\ofzilin.github\01-plugin-dev\dsh-skills-plugin
 ```
 
-从 GitHub 安装（v0.1.0 起，仓库名是 `dsh-skills-packs`，包名是 `dsh-skill-packs`）：
+从 GitHub 安装（v0.1.0 起）：
 
 ```sh
-dsh plugin --profile web add "github:ofzilin/dsh-skills-packs#v0.1.0"
+dsh plugin --profile web add "github:ofzilin/dsh-skill-packs#v0.1.0"
 ```
 
 ## 开发

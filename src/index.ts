@@ -104,11 +104,18 @@ export function apply(ctx: Context, config?: Config): void {
     }
   })
 
-  const webServer = (ctx as unknown as { get(name: string): unknown }).get('webServer') as WebServerLike | undefined
-  if (webServer === undefined) return
-
+  // `webServer` is a service from the web bundle: it may not exist yet when this
+  // profile-level plugin applies, so wait for it instead of probing `ctx.get`.
+  // Probing returns undefined on a cold start and the routes would never exist.
+  const pendingRoutes: Array<{
+    readonly path: string
+    readonly handler: (request: HttpRequest, response: HttpResponse) => void
+  }> = []
   const route = (path: string, handler: (request: HttpRequest, response: HttpResponse) => void): void => {
-    ctx.effect(() => webServer.register({ kind: 'exact', path, handler }))
+    pendingRoutes.push({ path, handler })
+  }
+  const injectable = ctx as unknown as {
+    inject(deps: readonly string[], callback: (scope: Context & { webServer: WebServerLike }) => void): void
   }
 
   route('/skill-packs/state', (request, response) => {
@@ -143,6 +150,17 @@ export function apply(ctx: Context, config?: Config): void {
       invalidate?.()
       sendJson(response, 200, await statePayload(paths))
     })().catch((error: unknown) => sendJson(response, 400, { error: messageOf(error) }))
+  })
+
+  injectable.inject(['webServer'], (web) => {
+    for (const pending of pendingRoutes) {
+      web.effect(() => web.webServer.register({
+        kind: 'exact',
+        path: pending.path,
+        handler: pending.handler,
+      }))
+    }
+    ctx.logger.info(`skill-packs: ${pendingRoutes.length} configuration routes registered`)
   })
 }
 

@@ -5,12 +5,48 @@ window.__ModuleLoader__.load({
     const { useCallback, useEffect, useState } = React
     const h = React.createElement
 
-    const MODES = [
-      ['both', 'Rewrite references, then add a namespace rule if a bare name remains (default)'],
-      ['rewrite', 'Rewrite references only (slash gestures and quoted Skill-tool names)'],
-      ['note', 'Leave bodies untouched; add the namespace rule when a bare name appears'],
-      ['off', 'Leave bodies untouched'],
-    ]
+    const MODE_KEYS = ['both', 'rewrite', 'note', 'off']
+
+    const DICTS = {
+      en: {
+        title: 'Skill pack references',
+        settingsFile: 'Settings file',
+        defaultLabel: 'Default for every pack',
+        perPack: 'Per-pack override',
+        inherit: 'Inherit default',
+        save: 'Save',
+        saving: 'Saving…',
+        reset: 'Reset to default',
+        reload: 'Reload',
+        saved: 'Saved. The next skill load uses the new setting.',
+        resetDone: 'Reset to defaults.',
+        loading: 'Loading…',
+        noPacks: 'No pack is enabled in this settings file.',
+        'mode.both': 'Rewrite references, then add a namespace rule if a bare name remains (default)',
+        'mode.rewrite': 'Rewrite references only (slash gestures and quoted Skill-tool names)',
+        'mode.note': 'Leave bodies untouched; add the namespace rule when a bare name appears',
+        'mode.off': 'Leave bodies untouched',
+      },
+      zh: {
+        title: 'Skill Pack 引用处理',
+        settingsFile: '配置文件',
+        defaultLabel: '所有 pack 的默认行为',
+        perPack: '按 pack 覆盖',
+        inherit: '继承默认',
+        save: '保存',
+        saving: '保存中…',
+        reset: '恢复默认',
+        reload: '重新加载',
+        saved: '已保存。下一次加载 skill 时生效。',
+        resetDone: '已恢复默认。',
+        loading: '加载中…',
+        noPacks: '这个 settings 文件里没有启用任何 pack。',
+        'mode.both': '先改写引用；若仍残留裸名，再在正文前加一段 namespace 规则（默认）',
+        'mode.rewrite': '只改写引用（斜杠手势、以及同行提到 skill 的引号名）',
+        'mode.note': '不改正文，只在出现裸名时加 namespace 规则',
+        'mode.off': '完全不改正文',
+      },
+    }
 
     const styles = {
       page: { padding: '4px 0', maxWidth: '720px' },
@@ -38,11 +74,11 @@ window.__ModuleLoader__.load({
       ok: { color: '#0a7a33', fontSize: '12px' },
     }
 
-    function modeOptions(inheritLabel) {
-      const options = inheritLabel === undefined
-        ? MODES
-        : [['', inheritLabel]].concat(MODES)
-      return options.map(([value, text]) => h('option', { key: value || 'inherit', value }, text))
+    function modeOptions(t, inheritLabel) {
+      const entries = inheritLabel === undefined
+        ? MODE_KEYS.map((key) => [key, t(`mode.${key}`)])
+        : [['', inheritLabel]].concat(MODE_KEYS.map((key) => [key, t(`mode.${key}`)]))
+      return entries.map(([value, text]) => h('option', { key: value || 'inherit', value }, text))
     }
 
     function Page(props) {
@@ -54,6 +90,12 @@ window.__ModuleLoader__.load({
       const [status, setStatus] = useState('')
       const [error, setError] = useState('')
       const [busy, setBusy] = useState(false)
+      const [, setRevision] = useState(0)
+
+      // Re-render on a locale switch in the host shell.
+      useEffect(() => props.locale.subscribe(() => setRevision((value) => value + 1)), [props.locale])
+
+      const t = props.t
 
       const applyState = useCallback((data) => {
         setState({ ...data, loading: false })
@@ -70,9 +112,9 @@ window.__ModuleLoader__.load({
         setError('')
         try {
           const res = await fetch('/skill-packs/state', { credentials: 'same-origin' })
-          const data = await res.json()
-          if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
-          applyState(data)
+          const text = await res.text()
+          if (!res.ok) throw new Error(text || `HTTP ${res.status}`)
+          applyState(JSON.parse(text))
         } catch (e) {
           setError(e instanceof Error ? e.message : String(e))
           setState((prev) => ({ ...prev, loading: false }))
@@ -100,16 +142,18 @@ window.__ModuleLoader__.load({
             credentials: 'same-origin',
             body: JSON.stringify({ config }),
           })
-          const data = await res.json()
-          if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
+          const text = await res.text()
+          let data = {}
+          try { data = text ? JSON.parse(text) : {} } catch { data = {} }
+          if (!res.ok) throw new Error(data.error || text || `HTTP ${res.status}`)
           applyState(data)
-          setStatus('Saved. The next skill load uses the new setting.')
+          setStatus(t('saved'))
         } catch (e) {
           setError(e instanceof Error ? e.message : String(e))
         } finally {
           setBusy(false)
         }
-      }, [applyState, mode, overrides])
+      }, [applyState, mode, overrides, t])
 
       const reset = useCallback(async () => {
         setBusy(true)
@@ -117,38 +161,40 @@ window.__ModuleLoader__.load({
         setError('')
         try {
           const res = await fetch('/skill-packs/reset', { method: 'POST', credentials: 'same-origin' })
-          const data = await res.json()
-          if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
+          const text = await res.text()
+          let data = {}
+          try { data = text ? JSON.parse(text) : {} } catch { data = {} }
+          if (!res.ok) throw new Error(data.error || text || `HTTP ${res.status}`)
           applyState(data)
-          setStatus('Reset to defaults.')
+          setStatus(t('resetDone'))
         } catch (e) {
           setError(e instanceof Error ? e.message : String(e))
         } finally {
           setBusy(false)
         }
-      }, [applyState])
+      }, [applyState, t])
 
       const enabledPacks = Object.keys(state.packs || {}).filter((pack) => state.packs[pack] === true).sort()
 
       return h('div', { style: styles.page },
-        h('h3', { style: styles.title }, 'Skill pack references'),
+        h('h3', { style: styles.title }, t('title')),
         h('p', { style: styles.hint },
-          'Settings file: ', h('code', { style: styles.code }, state.settingsPath || ''),
+          t('settingsFile'), ': ', h('code', { style: styles.code }, state.settingsPath || ''),
         ),
         state.loading
-          ? h('p', null, 'Loading…')
+          ? h('p', null, t('loading'))
           : h('div', null,
-              h('label', { style: styles.label, htmlFor: 'skill-packs-mode' }, 'Default for every pack'),
+              h('label', { style: styles.label, htmlFor: 'skill-packs-mode' }, t('defaultLabel')),
               h('select', {
                 id: 'skill-packs-mode',
                 value: mode,
                 onChange: (e) => setMode(e.target.value),
                 style: styles.select,
-              }, modeOptions(undefined)),
+              }, modeOptions(t, undefined)),
               enabledPacks.length === 0
-                ? h('p', { style: styles.hint }, 'No pack is enabled in this settings file.')
+                ? h('p', { style: styles.hint }, t('noPacks'))
                 : h('div', null,
-                    h('span', { style: styles.label }, 'Per-pack override'),
+                    h('span', { style: styles.label }, t('perPack')),
                     enabledPacks.map((pack) => h('div', { key: pack, style: styles.packRow },
                       h('span', { style: styles.packName, title: pack }, pack),
                       h('select', {
@@ -160,27 +206,32 @@ window.__ModuleLoader__.load({
                           setOverrides(next)
                         },
                         style: { ...styles.select, ...styles.packSelect },
-                      }, modeOptions('Inherit default')),
+                      }, modeOptions(t, t('inherit'))),
                     )),
                   ),
             ),
         h('div', { style: styles.row },
-          h('button', { onClick: save, disabled: busy, style: styles.button }, busy ? 'Saving…' : 'Save'),
-          h('button', { onClick: reset, disabled: busy, style: styles.button2 }, 'Reset to default'),
-          h('button', { onClick: load, disabled: busy, style: styles.button2 }, 'Reload'),
+          h('button', { onClick: save, disabled: busy, style: styles.button }, busy ? t('saving') : t('save')),
+          h('button', { onClick: reset, disabled: busy, style: styles.button2 }, t('reset')),
+          h('button', { onClick: load, disabled: busy, style: styles.button2 }, t('reload')),
         ),
         error ? h('p', { style: styles.error }, error) : null,
         status ? h('p', { style: styles.ok }, status) : null,
       )
     }
 
-    const inject = ['slots']
+    const inject = ['slots', 'locale']
 
     function apply(ctx) {
+      for (const [locale, dict] of Object.entries(DICTS)) {
+        ctx.effect(() => ctx.locale.register('skill-packs', locale, dict))
+      }
+      const t = ctx.locale.bind('skill-packs')
+      const locale = ctx.locale
       ctx.slots.inject('plugins.bundle.config', () => ctx.slots.register({
         name: 'plugins.bundle.config',
         key: 'dsh-skill-packs',
-      }, Page))
+      }, (props) => h(Page, { ...props, t, locale })))
     }
 
     const module = { exports: {} }

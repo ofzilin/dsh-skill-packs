@@ -1,6 +1,6 @@
 {
   "name": "dsh-skill-packs",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "description": "Mount whole skill repositories into DeepSeek Harness as namespaced skill packs.",
   "type": "module",

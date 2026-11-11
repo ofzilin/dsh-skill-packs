@@ -56,6 +56,9 @@ describe('reference policy', () => {
   it('prepends the namespace rule only when a bare name survives', () => {
     const residualOn = run('Use grilling to sharpen this.\nCall the Skill tool with "grilling".\n')
     expect(residualOn.content.startsWith('> **Pack namespace.**')).toBe(true)
+    // One contiguous blockquote line: no stray "> " markers inside the sentence.
+    expect(residualOn.content).toContain('same-pack skills referenced here')
+    expect(residualOn.content.split('\n')[0]).not.toContain(' > ')
     expect(residualOn.content).toContain('`grilling`')
     expect(residualOn.content).toContain('"mattpocock-skills-grilling"')
 

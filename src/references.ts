@@ -104,12 +104,10 @@ function appearsBare(text: string, name: string): boolean {
 }
 
 function namespaceRule(namespace: string, example: string): string {
-  return [
-    `> **Pack namespace.** This skill belongs to the pack \`${namespace}\`; same-pack skills`,
-    `> referenced here are registered with a \`${namespace}-\` prefix (for example \`${example}\` →`,
-    `> \`${namespace}-${example}\`). When a bare name in this text refers to a skill rather than an`,
-    '> ordinary word, use the prefixed name.',
-  ].join(' ')
+  return '> **Pack namespace.** This skill belongs to the pack '
+    + `\`${namespace}\`; same-pack skills referenced here are registered with a `
+    + `\`${namespace}-\` prefix (for example \`${example}\` → \`${namespace}-${example}\`). `
+    + 'When a bare name in this text refers to a skill rather than an ordinary word, use the prefixed name.'
 }
 
 function escapeRegExp(value: string): string {

@@ -2,6 +2,10 @@
  * The enable table: `<pack root>/settings.json` maps pack directory names to
  * booleans. Names are directory names, never namespaces, so renaming a
  * namespace inside a manifest does not orphan the entry.
+ *
+ * This file is intentionally hand-editable and holds nothing else: plugin
+ * options live in `<pack root>/config.json` so the configuration page never has
+ * to rewrite the table.
  */
 /** File name of the enable table in both user-level and project-level roots. */
 export declare const SETTINGS_FILE = "settings.json";

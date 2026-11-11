@@ -116,6 +116,26 @@ DSH 的 skill 发现只扫一层（`<root>/<name>/SKILL.md`），所有仓库的
 - 客户端插件、`/ns:skill` 冒号形、`/` 菜单分组、chip 定制
 - pack 内的单文件 skill（`skills/<name>.md`）、manifest 里的 glob
 
+## 配置
+
+配置在 `~/.dsh/dsh-skill-packs/config.json`，与启用表分开：`settings.json` 只放"目录名 → 布尔"，手改它不会和 UI 的写入互相覆盖。
+
+```json
+{
+  "references": { "mode": "both" },
+  "packs": { "mattpocock-skills": { "mode": "note" } }
+}
+```
+
+| mode | 行为 |
+|---|---|
+| `both`（默认） | 先改写引用，若仍有裸名再在正文前加一段 namespace 规则 |
+| `rewrite` | 只改写引用（`` `/name` `` 与同行为 `skill` 语境的 `"name"`） |
+| `note` | 不改正文，只在有裸名时加 namespace 规则 |
+| `off` | 完全不动正文 |
+
+配置页在**插件页这一行的 Configure 入口**（`plugins.bundle.config` 槽），由手写的 `client.js` 渲染；读写走本插件自己的 `GET /skill-packs/state`、`POST /skill-packs/save`、`POST /skill-packs/reset`（仅 loopback）。保存后会立即 `invalidate()`，下一个 pre-step 生效。
+
 ## 安装
 
 本地开发期直接把本仓库挂进 profile（需要绝对路径，且先 `npm run build` 产出 `lib/`）：
@@ -142,6 +162,8 @@ npm run build     # tsdown → lib/index.js，tsc → lib/types/
 约定：**运行时不 import 任何 `@deepseek-ai/*`**（已安装插件解析不到宿主包，见 ADR 0005），`@deepseek-ai/*` 只进 `devDependencies`；运行时依赖只有 `yaml` 与 `chokidar`。名字文法在 `src/names.ts` 本地留一份，`tests/names.spec.ts` 对着 core 的 `isSkillName` 逐条比对。
 
 `lib/` 是**提交物**：远端安装（`dsh plugin add github:...`）不会替我们跑构建，所以改完 `src/` 要先 `npm run build` 再提交。
+
+`client.js` 是手写的客户端半边（`dsh.client`），不经过构建：用 `window.__ModuleLoader__.load` 注册 `plugins.bundle.config` 槽，React 由宿主模块表提供。改它不需要 build，但需要重装插件才会进 profile。
 
 ## 文档
 

@@ -3,7 +3,9 @@
  * the registry, and load bodies lazily.
  *
  * Candidates are summaries; the registry calls `get()` only when a skill is
- * actually used, so listing a large pack stays cheap.
+ * actually used, so listing a large pack stays cheap. `get()` also applies the
+ * reference policy: same-pack references are rewritten to canonical names, and
+ * a namespace rule is prepended when a bare name survives.
  */
 import type { SkillProvider } from '@deepseek-ai/dsh-skill';
 import type { ResolvedConfig } from './config';

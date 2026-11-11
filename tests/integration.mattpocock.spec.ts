@@ -90,16 +90,37 @@ describe.skipIf(!enabled)('mattpocock/skills as a compat pack', () => {
     await fiber.dispose()
   })
 
-  it('coexists with the flattened copy in the user skill root', async () => {
+  it('rewrites sibling references and explains surviving bare names', async () => {
+    const ctx = new Context()
+    await ctx.plugin(SkillRegistry)
+    const fiber = await ctx.plugin(SkillPacks, { packRoot })
+
+    // grill-with-docs quotes both siblings in a Skill-tool instruction, so both
+    // are rewritten and no namespace rule is needed.
+    const grill = await ctx.skills.get('mattpocock-skills-grill-with-docs')
+    expect(grill?.content).toContain('"mattpocock-skills-grilling"')
+    expect(grill?.content).toContain('"mattpocock-skills-domain-modeling"')
+    expect(grill?.content.startsWith('> **Pack namespace.**')).toBe(false)
+
+    // triage also mentions grilling as prose, so the surviving bare name earns
+    // the namespace rule while the quoted tool references are still rewritten.
+    const triage = await ctx.skills.get('mattpocock-skills-triage')
+    expect(triage?.content.startsWith('> **Pack namespace.**')).toBe(true)
+    expect(triage?.content).toContain('"mattpocock-skills-grilling"')
+
+    await fiber.dispose()
+  })
+
+  it('coexists with a flattened copy when one is installed', async () => {
     const ctx = new Context()
     await ctx.plugin(SkillRegistry)
     const fiber = await ctx.plugin(SkillPacks, { packRoot })
 
     const names = new Set((await ctx.skills.list()).map((skill) => skill.name))
     expect(names.has('mattpocock-skills-grilling')).toBe(true)
-    // The flat copy is a different provider's job; holding the same content
-    // under two names is the documented coexistence (ADR 0005).
-    expect(existsSync(join(homedir(), '.dsh', 'skills', 'grilling', 'SKILL.md'))).toBe(true)
+    // A flat copy is another provider's business; holding the same content under
+    // two names is the documented coexistence (ADR 0005). This provider only
+    // contributes the namespaced name either way.
     expect(names.has('grilling')).toBe(false)
 
     await fiber.dispose()

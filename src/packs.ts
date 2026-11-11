@@ -14,6 +14,7 @@ import type { SkillInvocationPolicy } from '@deepseek-ai/dsh-skill'
 
 import { parseSkillFile } from './frontmatter'
 import { canonicalName, isSkillName, normalizeNamePart } from './names'
+import type { SiblingSkill } from './references'
 import type { EnableTable } from './settings'
 
 /** Which marker decided how a pack is interpreted. */
@@ -39,9 +40,16 @@ export interface PackScan {
   readonly problems: readonly string[]
 }
 
+/** A pack skill plus the context `get()` needs to resolve in-body references. */
+export interface ResolvedSkill extends PackSkill {
+  readonly pack: string
+  readonly namespace: string
+  readonly siblings: readonly SiblingSkill[]
+}
+
 /** Aggregate outcome of scanning the whole pack root. */
 export interface PackScanBatch {
-  readonly skills: readonly PackSkill[]
+  readonly skills: readonly ResolvedSkill[]
   readonly problems: readonly string[]
 }
 
@@ -83,7 +91,7 @@ export async function scanPacks(options: {
     }
   }
 
-  const skills: PackSkill[] = []
+  const skills: ResolvedSkill[] = []
   const seen = new Map<string, string>()
 
   for (const directoryName of directoryNames) {
@@ -102,6 +110,12 @@ export async function scanPacks(options: {
       continue
     }
     problems.push(...pack.problems)
+    const siblings: SiblingSkill[] = pack.skills.map((skill) => ({
+      name: bareName(skill.name, pack.namespace),
+      canonical: skill.name,
+      modelInvocable: skill.invocation.modelInvocable,
+      userInvocable: skill.invocation.userInvocable,
+    }))
     for (const skill of pack.skills) {
       const owner = seen.get(skill.name)
       if (owner !== undefined) {
@@ -111,7 +125,7 @@ export async function scanPacks(options: {
         continue
       }
       seen.set(skill.name, pack.pack)
-      skills.push(skill)
+      skills.push({ ...skill, pack: pack.pack, namespace: pack.namespace, siblings })
     }
   }
 
@@ -443,6 +457,12 @@ async function readJson(path: string): Promise<JsonRead | undefined> {
 
 function stringOr(value: unknown, fallback: string): string {
   return typeof value === 'string' && value.length > 0 ? value : fallback
+}
+
+/** Strip the namespace prefix from a canonical name. */
+function bareName(canonical: string, namespace: string): string {
+  const prefix = `${namespace}-`
+  return canonical.startsWith(prefix) ? canonical.slice(prefix.length) : canonical
 }
 
 /** Whether `candidate` is inside `root` (and not the root itself). */

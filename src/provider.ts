@@ -3,7 +3,9 @@
  * the registry, and load bodies lazily.
  *
  * Candidates are summaries; the registry calls `get()` only when a skill is
- * actually used, so listing a large pack stays cheap.
+ * actually used, so listing a large pack stays cheap. `get()` also applies the
+ * reference policy: same-pack references are rewritten to canonical names, and
+ * a namespace rule is prepended when a bare name survives.
  */
 
 import { readFile } from 'node:fs/promises'
@@ -12,7 +14,15 @@ import type { SkillCandidate, SkillDefinition, SkillProvider } from '@deepseek-a
 
 import type { ResolvedConfig } from './config'
 import { parseSkillFile } from './frontmatter'
-import { type PackSkill, scanPacks } from './packs'
+import {
+  DEFAULT_PLUGIN_CONFIG,
+  OPTIONS_FILE,
+  type PluginConfig,
+  readOptions,
+  resolveReferenceMode,
+} from './options'
+import { type ResolvedSkill, scanPacks } from './packs'
+import { applyReferencePolicy, type SiblingSkill } from './references'
 import { mergeTables, projectSettingsPath, readEnableTable, SETTINGS_FILE } from './settings'
 
 /** Registry-unique provider name; `filesystem` and `runtime` are taken by core. */
@@ -28,6 +38,9 @@ interface PackLocator {
   readonly kind: 'pack-skill'
   readonly skillFile: string
   readonly directory: string
+  readonly pack: string
+  readonly namespace: string
+  readonly siblings: readonly SiblingSkill[]
 }
 
 /** Dependencies the provider needs from its plugin. */
@@ -46,11 +59,19 @@ export interface ProviderOptions {
  * @returns a provider over the configured pack root.
  */
 export function createProvider(options: ProviderOptions): SkillProvider {
+  // Both files are watched, so a change invalidates the catalog and the next
+  // `list()` refreshes this value before any body is loaded.
+  let pluginConfig: PluginConfig = DEFAULT_PLUGIN_CONFIG
+
   return {
     name: PROVIDER_NAME,
 
     list: async (lookup) => {
       const table = await loadEnableTable(options.config.packRoot, lookup.cwd, options.warn)
+      const read = await readOptions(join(options.config.packRoot, OPTIONS_FILE))
+      for (const problem of read.problems) options.warn(problem)
+      pluginConfig = read.config
+
       const batch = await scanPacks({
         packRoot: options.config.packRoot,
         table,
@@ -74,6 +95,14 @@ export function createProvider(options: ProviderOptions): SkillProvider {
       const parsed = parseSkillFile(raw)
       if (!parsed.ok) return undefined
 
+      const applied = applyReferencePolicy({
+        body: parsed.body,
+        namespace: locator.namespace,
+        self: candidate.name,
+        siblings: locator.siblings,
+        mode: resolveReferenceMode(pluginConfig, locator.pack),
+      })
+
       return {
         name: candidate.name,
         description: parsed.skill.description,
@@ -82,7 +111,7 @@ export function createProvider(options: ProviderOptions): SkillProvider {
         source: PACK_SOURCE,
         path: locator.skillFile,
         resourceBase: { kind: 'directory', path: locator.directory },
-        content: parsed.body,
+        content: applied.content,
         ...(parsed.skill.whenToUse === undefined ? {} : { whenToUse: parsed.skill.whenToUse }),
         ...(parsed.skill.metadata === undefined ? {} : { metadata: parsed.skill.metadata }),
       }
@@ -103,14 +132,18 @@ async function loadEnableTable(
 
   const projectRead = await readEnableTable(projectPath)
   for (const problem of projectRead.problems) warn(problem)
+  // The project file only declares intent (which packs).
   return mergeTables(userRead.table, projectRead.table)
 }
 
-function toCandidate(skill: PackSkill): SkillCandidate {
+function toCandidate(skill: ResolvedSkill): SkillCandidate {
   const locator: PackLocator = {
     kind: 'pack-skill',
     skillFile: skill.skillFile,
     directory: skill.directory,
+    pack: skill.pack,
+    namespace: skill.namespace,
+    siblings: skill.siblings,
   }
   return {
     name: skill.name,
@@ -132,5 +165,14 @@ function asLocator(value: unknown): PackLocator | undefined {
   const locator = value as Partial<PackLocator>
   if (locator.kind !== 'pack-skill') return undefined
   if (typeof locator.skillFile !== 'string' || typeof locator.directory !== 'string') return undefined
-  return { kind: 'pack-skill', skillFile: locator.skillFile, directory: locator.directory }
+  if (typeof locator.pack !== 'string' || typeof locator.namespace !== 'string') return undefined
+  if (!Array.isArray(locator.siblings)) return undefined
+  return {
+    kind: 'pack-skill',
+    skillFile: locator.skillFile,
+    directory: locator.directory,
+    pack: locator.pack,
+    namespace: locator.namespace,
+    siblings: locator.siblings as SiblingSkill[],
+  }
 }

@@ -8,6 +8,7 @@
  * invalid candidate, so a bad pack must be dropped here, with a diagnostic.
  */
 import type { SkillInvocationPolicy } from '@deepseek-ai/dsh-skill';
+import type { SiblingSkill } from './references';
 import type { EnableTable } from './settings';
 /** Which marker decided how a pack is interpreted. */
 export type PackMode = 'manifest' | 'compat' | 'discovery';
@@ -29,9 +30,15 @@ export interface PackScan {
     readonly skills: readonly PackSkill[];
     readonly problems: readonly string[];
 }
+/** A pack skill plus the context `get()` needs to resolve in-body references. */
+export interface ResolvedSkill extends PackSkill {
+    readonly pack: string;
+    readonly namespace: string;
+    readonly siblings: readonly SiblingSkill[];
+}
 /** Aggregate outcome of scanning the whole pack root. */
 export interface PackScanBatch {
-    readonly skills: readonly PackSkill[];
+    readonly skills: readonly ResolvedSkill[];
     readonly problems: readonly string[];
 }
 /** Directories never descended into by discovery mode or watched for changes. */

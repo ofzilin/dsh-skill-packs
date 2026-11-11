@@ -2,6 +2,10 @@
  * The enable table: `<pack root>/settings.json` maps pack directory names to
  * booleans. Names are directory names, never namespaces, so renaming a
  * namespace inside a manifest does not orphan the entry.
+ *
+ * This file is intentionally hand-editable and holds nothing else: plugin
+ * options live in `<pack root>/config.json` so the configuration page never has
+ * to rewrite the table.
  */
 
 import { access, readFile } from 'node:fs/promises'
@@ -19,8 +23,6 @@ export interface SettingsRead {
   readonly problems: readonly string[]
 }
 
-const EMPTY_TABLE: EnableTable = new Map()
-
 /**
  * Read one settings file. A missing file is a normal empty table; malformed
  * content is reported without blocking startup.
@@ -32,17 +34,17 @@ export async function readEnableTable(path: string): Promise<SettingsRead> {
   try {
     raw = await readFile(path, 'utf8')
   } catch {
-    return { table: EMPTY_TABLE, problems: [] }
+    return { table: new Map(), problems: [] }
   }
 
   let parsed: unknown
   try {
     parsed = JSON.parse(raw)
   } catch (error) {
-    return { table: EMPTY_TABLE, problems: [`${path}: invalid JSON: ${messageOf(error)}`] }
+    return { table: new Map(), problems: [`${path}: invalid JSON: ${messageOf(error)}`] }
   }
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-    return { table: EMPTY_TABLE, problems: [`${path}: expected an object of directory names`] }
+    return { table: new Map(), problems: [`${path}: expected an object of directory names`] }
   }
 
   const table = new Map<string, boolean>()

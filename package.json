@@ -1,6 +1,6 @@
 {
   "name": "dsh-skill-packs",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Mount whole skill repositories into DeepSeek Harness as namespaced skill packs.",
   "type": "module",
@@ -11,15 +11,21 @@
       "types": "./lib/types/index.d.ts",
       "default": "./lib/index.js"
     },
+    "./client": "./client.js",
     "./package.json": "./package.json"
   },
   "files": [
     "lib",
+    "client.js",
     "cordis.patch.yml"
   ],
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": []
     }
   },
   "scripts": {

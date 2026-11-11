@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { Context } from '@deepseek-ai/cordis'
@@ -16,6 +16,19 @@ import * as SkillPacks from '../src/index'
  */
 const packRoot = process.env.DSH_SKILL_PACK_ROOT ?? join(homedir(), '.dsh', 'dsh-skill-packs')
 const enabled = existsSync(join(packRoot, 'mattpocock-skills', '.claude-plugin', 'plugin.json'))
+
+/** Reference assertions assume the default policy; a user override changes them. */
+const configuredMode = ((): string => {
+  try {
+    const parsed = JSON.parse(readFileSync(join(packRoot, 'config.json'), 'utf8')) as {
+      readonly references?: { readonly mode?: string }
+      readonly packs?: Readonly<Record<string, { readonly mode?: string }>>
+    }
+    return parsed.packs?.['mattpocock-skills']?.mode ?? parsed.references?.mode ?? 'both'
+  } catch {
+    return 'both'
+  }
+})()
 
 describe.skipIf(!enabled)('mattpocock/skills as a compat pack', () => {
   it('exposes exactly the 27 skills listed in plugin.json', async () => {
@@ -90,7 +103,7 @@ describe.skipIf(!enabled)('mattpocock/skills as a compat pack', () => {
     await fiber.dispose()
   })
 
-  it('rewrites sibling references and explains surviving bare names', async () => {
+  it.skipIf(configuredMode !== 'both')('rewrites sibling references and explains surviving bare names', async () => {
     const ctx = new Context()
     await ctx.plugin(SkillRegistry)
     const fiber = await ctx.plugin(SkillPacks, { packRoot })

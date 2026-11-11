@@ -165,6 +165,8 @@ npm run build     # tsdown → lib/index.js，tsc → lib/types/
 
 `client.js` 是手写的客户端半边（`dsh.client`），不经过构建：用 `window.__ModuleLoader__.load` 注册 `plugins.bundle.config` 槽，React 由宿主模块表提供。改它不需要 build，但需要重装插件才会进 profile。
 
+**给一个已经安装的包后加 client 半边不会热生效**：宿主对每个包缓存了"是不是客户端包"的结论（含否定结论），缓存活到进程重启。首次安装就带 `dsh.client` 的包不受影响；后加的必须重启一次 Web 服务，配置行才会出现。
+
 ## 文档
 
 - [GLOSSARY.md](./GLOSSARY.md)
